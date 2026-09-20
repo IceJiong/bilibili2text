@@ -10,6 +10,11 @@ import b2t.converter.md_to_png as md_to_png_module
 from b2t.converter.md_to_png import MarkdownToPngConverter
 
 
+def test_stock_card_single_field_uses_full_width_grid() -> None:
+    assert ".stock-table-fields-single" in md_to_png_module.HTML_TEMPLATE
+    assert "grid-template-columns: minmax(0, 1fr);" in (md_to_png_module.HTML_TEMPLATE)
+
+
 def test_normalize_markdown_for_tables_rewrites_fullwidth_table_chars() -> None:
     converter = MarkdownToPngConverter()
     source = "｜ 列1 ｜ 列2 ｜\n｜ －－－－ ｜ ：———： ｜\n｜ 值A ｜ 值B ｜\n"
