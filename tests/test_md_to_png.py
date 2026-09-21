@@ -64,6 +64,43 @@ def test_run_pandoc_uses_pipe_tables_and_parent_cwd(
     assert kwargs.get("input") == "| 列1 | 列2 |\n| --- | --- |\n| A | B |\n"
 
 
+def test_build_summary_render_html_adds_summary_metadata(
+    tmp_path: Path, monkeypatch
+) -> None:
+    md_path = tmp_path / "summary.md"
+    md_path.write_text("## 核心观点\n\n正文。\n", encoding="utf-8")
+
+    converter = MarkdownToPngConverter()
+    monkeypatch.setattr(converter, "_resolve_css_href", lambda css_url: "fallback.css")
+    monkeypatch.setattr(
+        converter,
+        "_run_pandoc",
+        lambda path: (
+            "<h1>旧标题</h1>"
+            "<ul><li>Creator: 作者</li>"
+            "<li>Published: 2026-08-28 12:00:00</li></ul>"
+            "<h2>核心观点</h2><p>正文。</p>"
+        ),
+    )
+
+    html = converter.build_render_html(
+        md_path,
+        summary_document=True,
+        summary_title="标题 <测试>",
+        summary_pubdate="2026-08-28 12:00:00",
+        summary_generated_at="2026-08-28 13:00:00",
+    )
+
+    assert 'class="markdown-body summary-document"' in html
+    assert '<h1 class="summary-title">标题 &lt;测试&gt;</h1>' in html
+    assert "发布时间" in html
+    assert "总结时间" in html
+    assert "旧标题" not in html
+    assert "Creator:" not in html
+    assert "Published:" not in html
+    assert html.index('class="summary-header"') < html.index("<h2>核心观点</h2>")
+
+
 def test_convert_table_markdown_uses_stock_card_renderer(
     tmp_path: Path,
     monkeypatch,
